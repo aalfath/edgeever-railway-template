@@ -23,8 +23,9 @@ if [ "$(id -u)" = "0" ]; then
   if [ "$(stat -c %u "$DATA_DIR")" != "1000" ] || [ -n "$(find "$DATA_DIR" -mindepth 1 ! -user 1000 -print -quit 2>/dev/null)" ]; then
     chown -R 1000:1000 "$DATA_DIR"
   fi
-  exec setpriv --reuid=1000 --regid=1000 --init-groups --inh-caps=-all \
-    env HOME=/home/bun bun --preload /app/scripts/railway-proxy.mjs /app/scripts/self-hosted-server.js
+  # BusyBox su keeps the environment (-p) and execs, so bun stays PID 1.
+  export HOME=/home/bun
+  exec su -p -s /bin/sh bun -c 'exec bun --preload /app/scripts/railway-proxy.mjs /app/scripts/self-hosted-server.js'
 fi
 
 exec bun --preload /app/scripts/railway-proxy.mjs /app/scripts/self-hosted-server.js
